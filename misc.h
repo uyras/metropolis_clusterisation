@@ -26,6 +26,8 @@ struct Part{
 
 struct triplet {
     size_t max;
+    size_t max2;
+    size_t max3;
     size_t min;
     size_t count;
     double mean;

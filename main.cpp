@@ -23,7 +23,7 @@ int main(int argc, char* argv[]){
     MagneticSystem sys(argv[1], {sx,sy,sz});
     ifstream states(argv[2]);
 
-    cout<<"# min\tmax\tcount\tmean\tmean2\tmean4"<<endl;
+    cout<<"# min\tmax\t2nd max\t3rd max\tcount\tmean\tmean2\tmean4"<<endl;
     string state_all,state;
     cout<<std::setprecision(10)<<std::scientific;
     while(std::getline(states,state_all)) {
@@ -39,7 +39,17 @@ int main(int argc, char* argv[]){
         G.stateToEdges(state);
         triplet res = G.findClusterStats();
 
-        cout<<res.min<<"\t"<<res.max<<"\t"<<res.count<<"\t"<<res.mean<<"\t"<<res.mean2<<"\t"<<res.mean4<<endl;
+        cout<<res.min<<"\t"
+            <<res.max<<"\t";
+        if (res.count>1) cout<<res.max2;
+        cout<<"\t";
+        if (res.count>2) cout<<res.max3;
+        cout<<"\t";
+        cout<<res.max3<<"\t"
+            <<res.count<<"\t"
+            <<res.mean<<"\t"
+            <<res.mean2<<"\t"
+            <<res.mean4<<endl;
     }
 
     

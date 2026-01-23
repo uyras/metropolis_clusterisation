@@ -116,7 +116,7 @@ public:
     triplet findClusterStats() {
         vector<bool> visited(V, false);
 
-        triplet ret = {0,0,0,0,0,0};
+        triplet ret = {0};
         unsigned long long mean=0;
         unsigned long long mean2=0;
         unsigned long long mean4=0;
@@ -130,9 +130,13 @@ public:
                 mean2 += component.size()*component.size();
                 mean4 += component.size()*component.size()*component.size()*component.size();
                 if (i==0){
-                    ret.max = ret.min = component.size();
+                    ret.max = ret.max2 = ret.max3 = ret.min = component.size();
                 } else {
-                    if (ret.max<component.size()) ret.max = component.size();
+                    if (ret.max<component.size()) {
+                        ret.max3 = ret.max2;
+                        ret.max2 = ret.max;
+                        ret.max = component.size();
+                    }
                     if (ret.min>component.size()) ret.min = component.size();
                 }
             }
