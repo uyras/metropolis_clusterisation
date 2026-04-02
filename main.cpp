@@ -2,10 +2,26 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <thread>
+#include <vector>
+#include <atomic>
+#include <algorithm>
 #include "MagneticSystem.h"
 #include "Graph.h"
 
 using namespace std;
+
+namespace {
+
+string extractState(const string& line) {
+    size_t pos = line.find('\t');
+    if (pos == string::npos) {
+        return line;
+    }
+    return line.substr(pos + 1);
+}
+
+}
 
 int main(int argc, char* argv[]){
 
@@ -24,21 +40,41 @@ int main(int argc, char* argv[]){
     ifstream states(argv[2]);
 
     cout<<"# min\tmax\t2nd max\t3rd max\tcount\tmean\tmean2\tmean4"<<endl;
-    string state_all,state;
+    vector<string> inputStates;
+    string state_all;
+    while (std::getline(states, state_all)) {
+        if (state_all.empty() || state_all[0] == '#') continue;
+        inputStates.push_back(extractState(state_all));
+    }
+
+    vector<triplet> results(inputStates.size());
+    Graph baseGraph(sys, dist);
+    atomic_size_t nextIndex{0};
+    const unsigned int workerCount = std::max(1u, std::thread::hardware_concurrency());
+    vector<thread> workers;
+    workers.reserve(workerCount);
+
+    for (unsigned int workerId = 0; workerId < workerCount; ++workerId) {
+        workers.emplace_back([&]() {
+            while (true) {
+                const size_t index = nextIndex.fetch_add(1);
+                if (index >= inputStates.size()) {
+                    break;
+                }
+
+                Graph graph = baseGraph;
+                graph.stateToEdges(inputStates[index]);
+                results[index] = graph.findClusterStats();
+            }
+        });
+    }
+
+    for (auto& worker : workers) {
+        worker.join();
+    }
+
     cout<<std::setprecision(10)<<std::scientific;
-    while(std::getline(states,state_all)) {
-        if (state_all[0]=='#') continue;
-
-        size_t pos = state_all.find('\t',0);
-        if (pos == string::npos)
-            state = state_all;
-        else
-            state = state_all.substr(pos+1);
-
-        Graph G(sys,0.8);
-        G.stateToEdges(state);
-        triplet res = G.findClusterStats();
-
+    for (const triplet& res : results) {
         cout<<res.min<<"\t"
             <<res.max<<"\t";
         if (res.count>1) cout<<res.max2;
